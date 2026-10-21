@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mithra's Cookie Rehab & AI Trainer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 650px;
+            width: 100%;
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            text-align: center;
+            margin-top: 40px;
+        }
+        h1 { color: #ff9800; margin-bottom: 5px; }
+        .status-box {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid #00bcd4;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        @media(max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+        .card {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        button {
+            background: #ff9800;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 10px;
+            width: 100%;
+        }
+        button:hover { background: #e08600; }
+        button:disabled { background: #555; color: #aaa; cursor: not-allowed; }
+        .progress-bar {
+            background: #444;
+            border-radius: 20px;
+            height: 20px;
+            width: 100%;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: #4caf50;
+            height: 100%;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        .item-display {
+            font-size: 70px;
+            margin: 15px 0;
+            min-height: 90px;
+        }
+        .label-btn {
+            background: #333;
+            color: #fff;
+            border: 2px solid #555;
+            margin: 5px 0;
+        }
+        .label-btn.correct { border-color: #4caf50; background: #1b5e20 !important; color: white; }
+        .label-btn.wrong { border-color: #f44336; background: #b71c1c !important; color: white; }
+        #feedback { font-size: 15px; font-weight: bold; margin-top: 15px; min-height: 40px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🍪 Mithra's Cookie Rehab AI 🤖</h1>
+    <p>Calibrating neural weights to distinguish baked goods from dangerous lab equipment.</p>
+    
+    <div class="status-box">
+        <strong>Patient:</strong> Mithra Thatta | <strong>Status:</strong> Hospitalized (Stable)<br>
+        <strong>Cortex Cookie Accuracy:</strong> <span id="metric-pct" style="color: #ffc107; font-weight: bold;">24%</span>
+    </div>
+
+    <div class="grid">
+        <!-- AI TRAINING PANEL -->
+        <div class="card">
+            <h3>Step 1: Train AI Overdrive</h3>
+            <p style="font-size: 14px; color: #aaa;">Inject synthetic dataset into Mithra's tracking filter to reduce furniture chomping loss.</p>
+            <button id="train-btn" onclick="startTraining()">Run Calibration Epochs</button>
+            <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+            <p id="training-status" style="font-size: 13px; color: #00bcd4; margin-top: 10px;">Status: Awaiting Dataset...</p>
+        </div>
+
+        <!-- SIMULATION PANEL -->
+        <div class="card">
+            <h3>Step 2: Sensory Retraining</h3>
+            <p style="font-size: 14px; color: #aaa;">Test his decision patterns safely.</p>
+            <div id="item-display" class="item-display">❓</div>
+            <div id="item-name" style="font-weight: bold; margin-bottom: 10px; color: #ff9800;">[Locked until AI trains]</div>
+            
+            <button id="cookie-btn" class="label-btn" onclick="checkChoice('cookie')" disabled>🍪 Real Cookie</button>
+            <button id="danger-btn" class="label-btn" onclick="checkChoice('danger')" disabled>🪵🔩 Lab Table / Washer</button>
+            
+            <div id="feedback"></div>
+            <button id="next-btn" onclick="nextItem()" style="background: #00bcd4; display:none; color: #000;">Next Object ➡️</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let trainingProgress = 0;
+    let isTrained = false;
+    let currentItem = null;
+    
+    const trainingSet = [
+        { name: "Chocolate Chip Cookie", icon: "🍪", type: "cookie" },
+        { name: "Lab Table corner with 2 Black Washers", icon: "🪵🔩", type: "danger" },
+        { name: "Oatmeal Raisin Cookie", icon: "🍪", type: "cookie" },
+        { name: "Rusty Bolt resting on Plywood", icon: "🛹🔩", type: "danger" },
+        { name: "Fudge Brownie Biscuit", icon: "🟫", type: "cookie" },
+        { name: "Industrial Dark Walnut Wood Chip", icon: "🪵", type: "danger" }
+    ];
+
+    function startTraining() {
+        document.getElementById('train-btn').disabled = true;
+        let fill = document.getElementById('progress-fill');
+        let status = document.getElementById('training-status');
+        trainingProgress = 0;
+        
+        let interval = setInterval(() => {
+            trainingProgress += 4;
+            fill.style.width = trainingProgress + '%';
+            status.innerText = `Optimizing... Loss: ${(1.5 - (trainingProgress/100)).toFixed(4)}`;
+            
+            if (trainingProgress >= 100) {
+                clearInterval(interval);
+                isTrained = true;
+                status.innerText = "Model: 100% Calibrated. Anti-Tweak Patch active.";
+                document.getElementById('metric-pct').innerText = "99.2% (AI Assisted)";
+                document.getElementById('metric-pct').style.color = "#4caf50";
+                nextItem();
+            }
+        }, 80);
+    }
+
+    function nextItem() {
+        if (!isTrained) return;
+        
+        document.getElementById('cookie-btn').className = "label-btn";
+        document.getElementById('danger-btn').className = "label-btn";
+        document.getElementById('feedback').innerText = "";
+        
+        currentItem = trainingSet[Math.floor(Math.random() * trainingSet.length)];
+        
+        document.getElementById('item-display').innerText = currentItem.icon;
+        document.getElementById('item-name').innerText = currentItem.name;
+        
+        document.getElementById('cookie-btn').disabled = false;
+        document.getElementById('danger-btn').disabled = false;
+        document.getElementById('next-btn').style.display = "none";
+    }
+
+    function checkChoice(choice) {
+        let feedback = document.getElementById('feedback');
+        document.getElementById('cookie-btn').disabled = true;
+        document.getElementById('danger-btn').disabled = true;
+        
+        if (choice === currentItem.type) {
+            feedback.innerText = "🎉 Success! Mithra identifies it safely. Zero impulse to chew the workbench.";
+            feedback.style.color = "#4caf50";
+            if(choice === 'cookie') document.getElementById('cookie-btn').classList.add('correct');
+            else document.getElementById('danger-btn').classList.add('correct');
+        } else {
+            feedback.innerText = "⚠️ EMERGENCY CRITICAL TWEAK! Mithra is leaning over the table with his mouth open! AI Override deployed!";
+            feedback.style.color = "#f44336";
+            if(choice === 'cookie') document.getElementById('cookie-btn').classList.add('wrong');
+            else document.getElementById('danger-btn').classList.add('wrong');
+        }
+        
+        document.getElementById('next-btn').style.display = "block";
+    }
+</script>
+</body>
+</html>
